@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"time"
 
@@ -8,7 +9,7 @@ import (
 )
 
 const dbFile = "blockchain.db"
-const blocksBucket = "blocksBucket"
+const blocksBucket = "blocks"
 
 type Blockchain struct {
 	tip []byte
@@ -26,15 +27,21 @@ func (bc *Blockchain) AddBlock(data string) {
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	newBlock := NewBlock(data, lastHash)
 
 	err = bc.db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
-		b.Put(newBlock.Hash, newBlock.Serialize())
+		err := b.Put(newBlock.Hash, newBlock.Serialize())
+		if err != nil {
+			log.Panic(err)
+		}
 		err = b.Put([]byte("l"), newBlock.Hash)
+		if err != nil {
+			log.Panic(err)
+		}
 		bc.tip = newBlock.Hash
 		return nil
 	})
@@ -69,19 +76,14 @@ func (i *BlockchainIterator) Next() *Block {
 
 	err := i.db.View(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
-		if string(i.currentHash) == "" {
-			return nil
-		}
 		encodedBlock := b.Get(i.currentHash)
 		block = DeserializeBlock(encodedBlock)
 		return nil
 	})
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
-	if block != nil {
-		i.currentHash = block.PrevBlockHash
-	}
+	i.currentHash = block.PrevBlockHash
 	return block
 }
 
@@ -89,19 +91,26 @@ func NewBlockchain() *Blockchain {
 	var tip []byte
 	db, err := bolt.Open(dbFile, 0600, &bolt.Options{Timeout: 1 * time.Second})
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket([]byte(blocksBucket))
 		if b == nil {
+			fmt.Println("No existing blockchain found. Creating a new one...")
 			genesis := NewGenesisBlock()
 			b, err := tx.CreateBucket([]byte(blocksBucket))
 			if err != nil {
-				log.Fatal(err)
+				log.Panic(err)
 			}
 			err = b.Put(genesis.Hash, genesis.Serialize())
-			b.Put([]byte("l"), genesis.Hash)
+			if err != nil {
+				log.Panic(err)
+			}
+			err = b.Put([]byte("l"), genesis.Hash)
+			if err != nil {
+				log.Panic(err)
+			}
 			tip = genesis.Hash
 		} else {
 			tip = b.Get([]byte("l"))
@@ -110,7 +119,7 @@ func NewBlockchain() *Blockchain {
 	})
 
 	if err != nil {
-		log.Fatal(err)
+		log.Panic(err)
 	}
 
 	bc := Blockchain{tip, db}
