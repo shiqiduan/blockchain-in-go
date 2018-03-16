@@ -28,7 +28,7 @@ func (pow *ProofOfWork) prepareDara(nonce int) []byte {
 	data := bytes.Join(
 		[][]byte{
 			pow.block.PrevBlockHash,
-			pow.block.Data,
+			pow.block.HashTransactions(),
 			IntToHex(pow.block.Timestamp),
 			IntToHex(int64(targeBits)),
 			IntToHex(int64(nonce)),
@@ -42,7 +42,7 @@ func (pow *ProofOfWork) Run() (int, []byte) {
 	var hash [32]byte
 	nonce := 0
 
-	fmt.Printf("Mining the block contarning \"%s\"\n", pow.block.Data)
+	fmt.Printf("Mining the block contarning \"%vv\"\n", pow.block.Transactions)
 
 	for nonce < maxNonce {
 		data := pow.prepareDara(nonce)

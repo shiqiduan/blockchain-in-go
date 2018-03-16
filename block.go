@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"crypto/sha256"
 	"encoding/gob"
 	"fmt"
 	"log"
@@ -12,19 +13,30 @@ type Block struct {
 	Timestamp     int64
 	PrevBlockHash []byte
 	Hash          []byte
-	Data          []byte
+	Transactions  []*Transaction
 	Nonce         int
 }
 
-func NewBlock(data string, PrevBlockHash []byte) *Block {
-	block := &Block{time.Now().Unix(), PrevBlockHash, []byte{}, []byte(data), 0}
+func NewBlock(transactions []*Transaction, PrevBlockHash []byte) *Block {
+	block := &Block{time.Now().Unix(), PrevBlockHash, []byte{}, transactions, 0}
 	pow := NewProofOfWork(block)
 	block.Nonce, block.Hash = pow.Run()
 	return block
 }
 
-func NewGenesisBlock() *Block {
-	return NewBlock("Genesis Block", []byte{})
+func NewGenesisBlock(coinbase *Transaction) *Block {
+	return NewBlock([]*Transaction{coinbase}, []byte{})
+}
+
+func (b *Block) HashTransactions() []byte {
+	var txHashes [][]byte
+	var txHash [32]byte
+
+	for _, tx := range b.Transactions {
+		txHashes = append(txHashes, tx.ID)
+	}
+	txHash = sha256.Sum256(bytes.Join(txHashes, []byte{}))
+	return txHash[:]
 }
 
 func (b *Block) Serialize() []byte {
@@ -49,6 +61,6 @@ func DeserializeBlock(d []byte) *Block {
 }
 
 func (b *Block) String() string {
-	return fmt.Sprintf("Hash: %x\nPreHash: %x\nData: %s\nTimestamp: %b\n",
-		b.Hash, b.PrevBlockHash, b.Data, b.Timestamp)
+	return fmt.Sprintf("Hash: %x\nPreHash: %x\nTransactions: %#v\nTimestamp: %b\n",
+		b.Hash, b.PrevBlockHash, b.Transactions, b.Timestamp)
 }
