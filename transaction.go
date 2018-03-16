@@ -72,6 +72,10 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 	return &tx
 }
 
+func (t *Transaction) String() string {
+	return fmt.Sprintf("ID : %x\nVin: %v\nVout: %v\n", t.ID, t.Vin, t.Vout)
+}
+
 func (t *Transaction) IsCoinBase() bool {
 	return len(t.Vin) == 1 && len(t.Vin[0].Txid) == 0 && t.Vin[0].Vout == -1
 }

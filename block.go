@@ -61,6 +61,6 @@ func DeserializeBlock(d []byte) *Block {
 }
 
 func (b *Block) String() string {
-	return fmt.Sprintf("Hash: %x\nPreHash: %x\nTransactions: %#v\nTimestamp: %b\n",
+	return fmt.Sprintf("Hash: %x\nPreHash: %x\nTransactions: %s\nTimestamp: %b\n",
 		b.Hash, b.PrevBlockHash, b.Transactions, b.Timestamp)
 }
