@@ -169,6 +169,7 @@ func CreateBlockchain(address string) *Blockchain {
 
 func (bc *Blockchain) FindUnspendTransactions(address string) []Transaction {
 	var unspendTXs []Transaction
+	unspendTXMap := make(map[string]bool)
 	spendTXOs := make(map[string][]int)
 	bci := bc.Iterator()
 
@@ -189,7 +190,11 @@ func (bc *Blockchain) FindUnspendTransactions(address string) []Transaction {
 				}
 
 				if out.CanBeUnlockedWith(address) {
-					unspendTXs = append(unspendTXs, *tx)
+					_, ok := unspendTXMap[hex.EncodeToString(tx.ID)]
+					if !ok {
+						unspendTXs = append(unspendTXs, *tx)
+						unspendTXMap[hex.EncodeToString(tx.ID)] = true
+					}
 				}
 			}
 
@@ -226,7 +231,6 @@ func (bc *Blockchain) FindUTXO(address string) []TXOutput {
 	return UTXOs
 }
 
-// FIXME 没有考虑已经花掉的output
 func (bc *Blockchain) FindSpendableOutputs(address string, amount int) (int, map[string][]int) {
 	unspentOutputs := make(map[string][]int)
 	unspentTXs := bc.FindUnspendTransactions(address)
