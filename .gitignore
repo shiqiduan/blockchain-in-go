@@ -12,3 +12,4 @@
 *.out
 .history/
 blockchain.db
+.vscode/
