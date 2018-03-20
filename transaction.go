@@ -12,6 +12,7 @@ import (
 	"log"
 	"math/big"
 	"strings"
+	"time"
 )
 
 const subsidy = 10
@@ -25,6 +26,7 @@ type Transaction struct {
 func NewCoinbaseTX(to, data string) *Transaction {
 	if data == "" {
 		data = fmt.Sprintf("Reward to '%s'", to)
+		data = time.Now().String()
 	}
 
 	txin := TXInput{[]byte{}, -1, nil, []byte(data)}
@@ -34,7 +36,7 @@ func NewCoinbaseTX(to, data string) *Transaction {
 	return &tx
 }
 
-func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transaction {
+func NewUTXOTransaction(from, to string, amount int, utxoSet *UTXOSet) *Transaction {
 	var inputs []TXInput
 	var outputs []TXOutput
 
@@ -44,7 +46,7 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 	}
 	wallet := wallets.GetWallet(from)
 	pubKeyHash := HashPubKey(wallet.PublicKey)
-	acc, validOutputs := bc.FindSpendableOutputs(pubKeyHash, amount)
+	acc, validOutputs := utxoSet.FindSpendableOutputs(pubKeyHash, amount)
 
 	if acc < amount {
 		log.Panic("ERROR: Not enough funds")
@@ -70,14 +72,14 @@ func NewUTXOTransaction(from, to string, amount int, bc *Blockchain) *Transactio
 
 	tx := Transaction{[]byte{}, inputs, outputs}
 	tx.ID = tx.Hash()
-	bc.SignTransaction(&tx, wallet.PrivateKey)
+	utxoSet.Blockchain.SignTransaction(&tx, wallet.PrivateKey)
 	return &tx
 }
 
 func (tx Transaction) String() string {
 	var lines []string
 
-	lines = append(lines, fmt.Sprintf("--- Transaction %x:", tx.ID))
+	lines = append(lines, fmt.Sprintf("\n--- Transaction %x:", tx.ID))
 
 	for i, input := range tx.Vin {
 		lines = append(lines, fmt.Sprintf("    Input %d:", i))

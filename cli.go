@@ -48,7 +48,10 @@ func (cli *CLI) printChain() {
 
 func (cli *CLI) createBlockchain(address string) {
 	bc := CreateBlockchain(address)
-	bc.db.Close()
+	defer bc.db.Close()
+
+	UTXOSet := UTXOSet{bc}
+	UTXOSet.Reindex()
 	fmt.Println("Done!")
 }
 
@@ -59,8 +62,9 @@ func (cli *CLI) getBalance(address string) {
 	balance := 0
 	pubKeyHash := Base58Decode([]byte(address))
 	pubKeyHash = pubKeyHash[1 : len(pubKeyHash)-4]
-	UTXOs := bc.FindUTXO(pubKeyHash)
 
+	UTXOSet := UTXOSet{bc}
+	UTXOs := UTXOSet.FindUTXO(pubKeyHash)
 	for _, out := range UTXOs {
 		balance += out.Value
 	}
@@ -70,10 +74,14 @@ func (cli *CLI) getBalance(address string) {
 
 func (cli *CLI) send(from, to string, amount int) {
 	bc := NewBlockchain(from)
+	UTXOSet := UTXOSet{bc}
 	defer bc.db.Close()
 
-	tx := NewUTXOTransaction(from, to, amount, bc)
-	bc.MineBlock([]*Transaction{tx})
+	tx := NewUTXOTransaction(from, to, amount, &UTXOSet)
+	cbTx := NewCoinbaseTX(from, "")
+	txs := []*Transaction{cbTx, tx}
+	newBlock := bc.MineBlock(txs)
+	UTXOSet.Update(newBlock)
 	fmt.Println("Success!")
 }
 
