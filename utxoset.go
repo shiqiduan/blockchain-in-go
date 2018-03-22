@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/hex"
-	"fmt"
 	"log"
 
 	"github.com/coreos/bbolt"
@@ -86,7 +85,6 @@ func (u UTXOSet) FindUTXO(pubKeyHash []byte) []TXOutput {
 
 		for k, v := c.First(); k != nil; k, v = c.Next() {
 			outs := DeserializeOutputs(v)
-			fmt.Printf("k: %x, v: %x\n", k, outs)
 			for _, out := range outs.Outputs {
 				if out.IsLockedWithKey(pubKeyHash) {
 					UTXOs = append(UTXOs, out)
@@ -99,7 +97,6 @@ func (u UTXOSet) FindUTXO(pubKeyHash []byte) []TXOutput {
 		log.Panic(err)
 	}
 
-	fmt.Printf("utxos %d\n", len(UTXOs))
 	return UTXOs
 }
 
