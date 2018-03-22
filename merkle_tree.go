@@ -41,10 +41,6 @@ func NewMerkleTree(data [][]byte) *MerkleTree {
 		return &MerkleTree{nil}
 	}
 
-	if len(data) == 1 {
-		return &MerkleTree{&nodes[0]}
-	}
-
 	if len(data)%2 != 0 {
 		data = append(data, data[len(data)-1])
 	}
