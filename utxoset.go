@@ -29,7 +29,6 @@ func (u UTXOSet) Reindex() {
 	if err != nil {
 		log.Panic(err)
 	}
-
 	UTXO := u.Blockchain.FindUTXO()
 	err = db.Update(func(tx *bolt.Tx) error {
 		b := tx.Bucket(bucketName)
@@ -46,6 +45,9 @@ func (u UTXOSet) Reindex() {
 		}
 		return nil
 	})
+	if err != nil {
+		log.Panic(err)
+	}
 }
 
 func (u UTXOSet) FindSpendableOutputs(pubKeyHash []byte, amount int) (int, map[string][]int) {
